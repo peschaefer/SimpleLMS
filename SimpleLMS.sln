@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi.Tests", "WebApi.Tests\WebApi.Tests.csproj", "{1BFF16CF-85F6-4E53-B887-EE4DE51DB36D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +12,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BFF16CF-85F6-4E53-B887-EE4DE51DB36D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BFF16CF-85F6-4E53-B887-EE4DE51DB36D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BFF16CF-85F6-4E53-B887-EE4DE51DB36D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BFF16CF-85F6-4E53-B887-EE4DE51DB36D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
