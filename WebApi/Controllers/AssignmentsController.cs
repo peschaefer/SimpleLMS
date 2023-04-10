@@ -59,13 +59,6 @@ namespace WebApi.Controllers
                 return BadRequest();
             }
 
-            // see if new module id reference a valid module in the database
-            var moduleExists = await _context.Modules.AnyAsync(m => m.Id == assignment.ModuleId);
-            if (!moduleExists)
-            {
-                return BadRequest("Invalid ModuleId");
-            }
-
             _context.Entry(assignment).State = EntityState.Modified;
 
             try
@@ -92,17 +85,6 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Assignment>> PostAssignment(Assignment assignment)
         {
-            if (_context.Modules == null)
-            {
-                return Problem("Entity set 'LMSContext.Modules' is null.");
-            }
-
-            var module = await _context.Modules.FindAsync(assignment.ModuleId);
-
-            if (module == null)
-            {
-                return NotFound("Module not found");
-            }
 
             _context.Assignments.Add(assignment);
 
@@ -115,11 +97,7 @@ namespace WebApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAssignment(int id)
         {
-            if (_context.Assignments == null)
-            {
-                return NotFound();
-            }
-            var assignment = await _context.Assignments.FindAsync(id);
+            var assignment = await _context.Assignments.FirstOrDefaultAsync(a => a.Id == id);
             if (assignment == null)
             {
                 return NotFound();

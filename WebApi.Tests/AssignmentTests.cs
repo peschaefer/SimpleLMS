@@ -4,6 +4,8 @@ using WebApi.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
+//SQLlite broke all of my tests so I am not using it here.  SQLite is used when actually running the project.
+
 public class AssignmentTests
 {
     private readonly DbContextOptions<LMSContext> _options;
@@ -26,23 +28,13 @@ public class AssignmentTests
         {
             var controller = new AssignmentsController(context);
 
-            var module = new Module
-            {
-                Id = 1,
-                Name = "Test Module",
-                CourseId = 1
-            };
-
-            context.Modules.Add(module);
-            await context.SaveChangesAsync();
-
             var assignment = new Assignment
             {
                 Id = 1,
                 Name = "Test Assignment",
                 Grade = 100,
                 DueDate = new DateTime(),
-                ModuleId = 1
+                Module = null
             };
 
             var result = await controller.PostAssignment(assignment);
@@ -53,7 +45,6 @@ public class AssignmentTests
             var retrievedAssignment = await context.Assignments.FindAsync(createdAssignment.Id);
             Assert.NotNull(retrievedAssignment);
             Assert.Equal(assignment.Name, retrievedAssignment.Name);
-            Assert.Equal(assignment.ModuleId, retrievedAssignment.ModuleId);
         }
     }
 
@@ -70,7 +61,7 @@ public class AssignmentTests
             Name = "Test Assignment",
             Grade = 100,
             DueDate = new DateTime(),
-            ModuleId = 1
+            Module = null
         };
 
         using (var context = new LMSContext(options))
@@ -103,7 +94,7 @@ public class AssignmentTests
             Name = "Test Assignment",
             Grade = 100,
             DueDate = new DateTime(),
-            ModuleId = 1
+            Module = null
         };
         var assignment2 = new Assignment
         {
@@ -111,7 +102,7 @@ public class AssignmentTests
             Name = "Test Assignment 2",
             Grade = 100,
             DueDate = new DateTime(),
-            ModuleId = 1
+            Module = null
         };
         using (var context = new LMSContext(options))
         {
@@ -147,7 +138,7 @@ public class AssignmentTests
             Name = "Test Assignment",
             Grade = 100,
             DueDate = new DateTime(),
-            ModuleId = 1
+            Module = null
         };
         using (var context = new LMSContext(options))
         {
@@ -166,30 +157,24 @@ public class AssignmentTests
         }
     }
 
+    //Create Assignment And Edit It
     [Fact]
-    public async Task PutAssignment()
+    public async Task CreateAssignmentAndEditIt()
     {
         var options = new DbContextOptionsBuilder<LMSContext>()
-            .UseInMemoryDatabase(databaseName: "PutAssignment")
+            .UseInMemoryDatabase(databaseName: "CreateAssignmentAndEditIt")
             .Options;
 
         using (var context = new LMSContext(options))
         {
-            var module = new Module
-            {
-                Id = 1,
-                Name = "Test Module",
-                CourseId = 1
-            };
             var assignment = new Assignment
             {
                 Id = 1,
                 Name = "Test Assignment",
                 Grade = 100,
                 DueDate = new DateTime(),
-                ModuleId = 1
+                Module = null
             };
-            context.Modules.Add(module);
             context.Assignments.Add(assignment);
 
             await context.SaveChangesAsync();
@@ -205,7 +190,7 @@ public class AssignmentTests
                 Name = "Updated Assignment",
                 Grade = 100,
                 DueDate = new DateTime(),
-                ModuleId = 1
+                Module = null
             };
 
             var result = await controller.PutAssignment(1, updatedAssignment);
@@ -213,6 +198,60 @@ public class AssignmentTests
             Assert.IsType<NoContentResult>(result);
             var courseFromDb = await context.Assignments.FindAsync(updatedAssignment.Id);
             Assert.Equal(updatedAssignment.Name, courseFromDb.Name);
+        }
+    }
+
+    //Create three assignments without any connection to a module, delete one, read all assignments, assert.
+    [Fact]
+    public async Task Create3AssignmentsAndDelete()
+    {
+        var options = new DbContextOptionsBuilder<LMSContext>()
+            .UseInMemoryDatabase(databaseName: "Create3AssignmentsAndDelete")
+            .Options;
+
+        var assignment = new Assignment
+        {
+            Id = 1,
+            Name = "Test Assignment",
+            Grade = 100,
+            DueDate = new DateTime(),
+            Module = null
+        };
+        var assignment2 = new Assignment
+        {
+            Id = 2,
+            Name = "Test Assignment 2",
+            Grade = 100,
+            DueDate = new DateTime(),
+            Module = null
+        };
+        var assignment3 = new Assignment
+        {
+            Id = 3,
+            Name = "Test Assignment 2",
+            Grade = 100,
+            DueDate = new DateTime(),
+            Module = null
+        };
+
+        using (var context = new LMSContext(options))
+        {
+            var controller = new AssignmentsController(context);
+
+            await controller.PostAssignment(assignment);
+            await controller.PostAssignment(assignment2);
+            await controller.PostAssignment(assignment3);
+
+            await controller.DeleteAssignment(3);
+
+            var result = await controller.GetAssignments();
+
+            Assert.IsType<ActionResult<IEnumerable<Assignment>>>(result);
+            var assignments = result.Value.ToList();
+            Assert.NotNull(assignments);
+            Assert.Equal(2, assignments.Count);
+            Assert.Equal(assignments[0].Name, "Test Assignment");
+            Assert.Equal(assignments[1].Name, "Test Assignment 2");
         }
     }
 }

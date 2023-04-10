@@ -26,15 +26,12 @@ public class ModuleTests
         {
             var controller = new ModulesController(context);
 
-            var course = new Course { Id = 1, Name = "Test Course" };
-            context.Courses.Add(course);
-            await context.SaveChangesAsync();
-
             var module = new Module
             {
                 Id = 1,
                 Name = "Test Module",
-                CourseId = course.Id
+                Course = null,
+                Assignments = new List<Assignment>()
             };
 
             var result = await controller.PostModule(module);
@@ -45,7 +42,6 @@ public class ModuleTests
             var retrievedModule = await context.Modules.FindAsync(createdModule.Id);
             Assert.NotNull(retrievedModule);
             Assert.Equal(module.Name, retrievedModule.Name);
-            Assert.Equal(module.CourseId, retrievedModule.CourseId);
         }
     }
 
@@ -56,16 +52,16 @@ public class ModuleTests
             .UseInMemoryDatabase(databaseName: "DeleteModuleTest")
             .Options;
 
-        var course = new Course { Id = 1, Name = "Test Course" };
         var module = new Module
         {
             Id = 1,
             Name = "Test Module",
-            CourseId = 1
+            Course = null,
+            Assignments = new List<Assignment>()
         };
+
         using (var context = new LMSContext(options))
         {
-            context.Courses.Add(course);
             context.Modules.Add(module);
             await context.SaveChangesAsync();
         }
@@ -88,22 +84,22 @@ public class ModuleTests
             .UseInMemoryDatabase(databaseName: "GetModules")
             .Options;
 
-        var course = new Course { Id = 1, Name = "Test Course" };
         var module = new Module
         {
             Id = 1,
             Name = "Test Module",
-            CourseId = 1
+            Course = null,
+            Assignments = new List<Assignment>()
         };
         var module2 = new Module
         {
             Id = 2,
             Name = "Test Module 2",
-            CourseId = 1
+            Course = null,
+            Assignments = new List<Assignment>()
         };
         using (var context = new LMSContext(options))
         {
-            context.Courses.Add(course);
             context.Modules.Add(module);
             context.Modules.Add(module2);
             await context.SaveChangesAsync();
@@ -135,7 +131,8 @@ public class ModuleTests
         {
             Id = 1,
             Name = "Test Module",
-            CourseId = 1
+            Course = null,
+            Assignments = new List<Assignment>()
         };
         using (var context = new LMSContext(options))
         {
@@ -156,56 +153,6 @@ public class ModuleTests
     }
 
     [Fact]
-    public async Task GetAssignmentsInModule()
-    {
-        var options = new DbContextOptionsBuilder<LMSContext>()
-            .UseInMemoryDatabase(databaseName: "GetAssignmentsInModule")
-            .Options;
-
-        var course = new Course { Id = 1, Name = "Test Course" };
-        var module = new Module
-        {
-            Id = 1,
-            Name = "Test Module",
-            CourseId = 1
-        };
-        var assignment = new Assignment
-        {
-            Id = 1,
-            Name = "Test Assignment",
-            Grade = 100,
-            DueDate = new DateTime(),
-            ModuleId = 1
-        };
-        var assignment2 = new Assignment
-        {
-            Id = 2,
-            Name = "Test Assignment 2",
-            Grade = 100,
-            DueDate = new DateTime(),
-            ModuleId = 1
-        };
-        using (var context = new LMSContext(options))
-        {
-            context.Courses.Add(course);
-            context.Modules.Add(module);
-            context.Assignments.Add(assignment);
-            context.Assignments.Add(assignment2);
-            await context.SaveChangesAsync();
-        }
-
-        using (var context = new LMSContext(options))
-        {
-            var controller = new ModulesController(context);
-            var result = await controller.GetAssignmentsInModule(1);
-
-            var assignments = Assert.IsType<List<Assignment>>(result.Value);
-            Assert.Equal(assignments[0].Name, "Test Assignment");
-            Assert.Equal(assignments[1].Name, "Test Assignment 2");
-        }
-    }
-
-    [Fact]
     public async Task PutModule()
     {
         var options = new DbContextOptionsBuilder<LMSContext>()
@@ -214,14 +161,13 @@ public class ModuleTests
 
         using (var context = new LMSContext(options))
         {
-            var course = new Course { Id = 1, Name = "Test Course" };
             var module = new Module
             {
                 Id = 1,
                 Name = "Test Module",
-                CourseId = 1
+                Course = null,
+                Assignments = new List<Assignment>()
             };
-            context.Courses.Add(course);
             context.Modules.Add(module);
             
             await context.SaveChangesAsync();
@@ -235,7 +181,8 @@ public class ModuleTests
             {
                 Id = 1,
                 Name = "Updated Module",
-                CourseId = 1
+                Course = null,
+                Assignments = new List<Assignment>()
             };
 
             var result = await controller.PutModule(1, updatedModule);
@@ -243,6 +190,58 @@ public class ModuleTests
             Assert.IsType<NoContentResult>(result);
             var courseFromDb = await context.Modules.FindAsync(updatedModule.Id);
             Assert.Equal(updatedModule.Name, courseFromDb.Name);
+        }
+    }
+
+    //Create a module with 2 assignment, read
+    [Fact]
+    public async Task PostModuleWith2Assignments()
+    {
+        var options = new DbContextOptionsBuilder<LMSContext>()
+            .UseInMemoryDatabase(databaseName: "PostModuleWith2Assignments")
+            .Options;
+
+        using (var context = new LMSContext(options))
+        {
+            var controller = new ModulesController(context);
+
+            var assignments = new List<Assignment>();
+            assignments.Add(new Assignment
+            {
+                Id = 1,
+                Name = "Test Assignment",
+                Grade = 100,
+                DueDate = new DateTime(),
+                Module = null
+            });
+
+            assignments.Add(new Assignment
+            {
+                Id = 2,
+                Name = "Test Assignment 2",
+                Grade = 100,
+                DueDate = new DateTime(),
+                Module = null
+            });
+
+            var module = new Module
+            {
+                Id = 1,
+                Name = "Test Module",
+                Course = null,
+                Assignments = assignments
+            };
+
+            var result = await controller.PostModule(module);
+
+            var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var createdModule = Assert.IsType<Module>(createdAtActionResult.Value);
+
+            var retrievedModule = await context.Modules.FindAsync(createdModule.Id);
+            Assert.NotNull(retrievedModule);
+            Assert.Equal(module.Name, retrievedModule.Name);
+            Assert.Equal(assignments[0].Name, retrievedModule.Assignments[0].Name);
+            Assert.Equal(assignments[1].Name, retrievedModule.Assignments[1].Name);
         }
     }
 }

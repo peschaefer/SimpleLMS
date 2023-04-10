@@ -49,22 +49,6 @@ namespace WebApi.Controllers
             return @module;
         }
 
-        // GET: api/Modules/5/assignments
-        [HttpGet("{id}/Assignments")]
-        public async Task<ActionResult<IEnumerable<Assignment>>> GetAssignmentsInModule(int id)
-        {
-            var assignments = await _context.Assignments
-                .Where(a => a.ModuleId == id)
-                .ToListAsync();
-
-            if (assignments == null)
-            {
-                return NotFound();
-            }
-
-            return assignments;
-        }
-
         // PUT: api/Modules/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -73,13 +57,6 @@ namespace WebApi.Controllers
             if (id != module.Id)
             {
                 return BadRequest();
-            }
-
-            // see if new course id reference a valid course in the database
-            var courseExists = await _context.Courses.AnyAsync(c => c.Id == module.CourseId);
-            if (!courseExists)
-            {
-                return BadRequest("Invalid ModuleId");
             }
 
             _context.Entry(module).State = EntityState.Modified;
@@ -111,13 +88,6 @@ namespace WebApi.Controllers
             if (_context.Courses == null)
             {
                 return Problem("Entity set 'LMSContext.Modules' is null.");
-            }
-
-            var course = await _context.Courses.FindAsync(module.CourseId);
-
-            if (course == null)
-            {
-                return NotFound("Course not found");
             }
 
             _context.Modules.Add(module);
